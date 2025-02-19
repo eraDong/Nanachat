@@ -6,9 +6,10 @@ INSERT INTO "chatrooms" (
     $1, $2
 ) RETURNING *;
 
+
 -- name: getChatrooms :one
 SELECT * FROM "chatrooms"
-WHERE chatroom_name=@chatroom_name;
+WHERE chatroom_name=$1;
 
 -- name: deleteChatrooms :exec
 DELETE FROM "chatrooms"

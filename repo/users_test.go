@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/eraDong/NanaChat/util"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
@@ -35,7 +36,32 @@ func createRandomUser(t *testing.T) Users {
 }
 
 func TestCreateUser(t *testing.T) {
-	createRandomUser(t)
+	t.Run("create random user", func(t *testing.T) {
+		createRandomUser(t)
+	})
+	t.Run("create dupilicate username user", func(t *testing.T) {
+		user := createRandomUser(t)
+		arg := createUserParams{
+			Username:       user.Username,
+			Nickname:       util.RandomString(6),
+			HashedPassword: "123",
+			Email:          randomEmail(),
+		}
+		user, err := testStore.createUser(context.Background(), arg)
+		require.Error(t, err)
+		require.Empty(t, user)
+	})
+	t.Run("create empty username user", func(t *testing.T) {
+		arg := createUserParams{
+			Username:       "",
+			Nickname:       util.RandomString(6),
+			HashedPassword: "123",
+			Email:          randomEmail(),
+		}
+		user, err := testStore.createUser(context.Background(), arg)
+		require.Error(t, err)
+		require.Empty(t, user)
+	})
 }
 
 func TestUpdateUser(t *testing.T) {
@@ -64,16 +90,38 @@ func TestUpdateUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	user := createRandomUser(t)
 
-	gotUser, err := testStore.getUser(context.Background(), user.Username)
-	require.NoError(t, err)
-	require.NotEmpty(t, gotUser)
+	t.Run("get user", func(t *testing.T) {
+		gotUser, err := testStore.getUser(context.Background(), user.Username)
+		require.NoError(t, err)
+		require.NotEmpty(t, gotUser)
 
-	require.Equal(t, user.ID, gotUser.ID)
-	require.Equal(t, user.Username, gotUser.Username)
-	require.Equal(t, user.Nickname, gotUser.Nickname)
-	require.Equal(t, user.Email, gotUser.Email)
-	require.Equal(t, user.HashedPassword, gotUser.HashedPassword)
-	require.WithinDuration(t, user.CreatedAt.Time, gotUser.CreatedAt.Time, time.Second)
+		require.Equal(t, user.ID, gotUser.ID)
+		require.Equal(t, user.Username, gotUser.Username)
+		require.Equal(t, user.Nickname, gotUser.Nickname)
+		require.Equal(t, user.Email, gotUser.Email)
+		require.Equal(t, user.HashedPassword, gotUser.HashedPassword)
+		require.WithinDuration(t, user.CreatedAt.Time, gotUser.CreatedAt.Time, time.Second)
+	})
+
+	t.Run("get a empty user", func(t *testing.T) {
+		notExistName := util.RandomString(6)
+		gotUser, err := testStore.getUser(context.Background(), notExistName)
+		require.EqualError(t, err, pgx.ErrNoRows.Error())
+		require.Empty(t, gotUser)
+	})
+
+}
+
+func TestDeleteUser(t *testing.T) {
+	t.Run("delete a user", func(t *testing.T) {
+		user := createRandomUser(t)
+		err := testStore.deleteUser(context.Background(), user.ID)
+		require.NoError(t, err)
+
+		user, err = testStore.getUser(context.Background(), user.Username)
+		require.Error(t, err)
+		require.Empty(t, user)
+	})
 
 }
 

@@ -14,21 +14,19 @@ import (
 const createUsersToChatrooms = `-- name: createUsersToChatrooms :one
 INSERT INTO "users_chatrooms" (
     user_id,
-    chatroom_id,
-    role
+    chatroom_id
 ) VALUES (
-    $1, $2, $3
+    $1, $2
 ) RETURNING id, user_id, chatroom_id, created_at, role
 `
 
 type createUsersToChatroomsParams struct {
-	UserID     int32  `json:"user_id"`
-	ChatroomID int32  `json:"chatroom_id"`
-	Role       string `json:"role"`
+	UserID     int32 `json:"user_id"`
+	ChatroomID int32 `json:"chatroom_id"`
 }
 
 func (q *Queries) createUsersToChatrooms(ctx context.Context, arg createUsersToChatroomsParams) (UsersChatrooms, error) {
-	row := q.db.QueryRow(ctx, createUsersToChatrooms, arg.UserID, arg.ChatroomID, arg.Role)
+	row := q.db.QueryRow(ctx, createUsersToChatrooms, arg.UserID, arg.ChatroomID)
 	var i UsersChatrooms
 	err := row.Scan(
 		&i.ID,
@@ -51,84 +49,83 @@ func (q *Queries) deleteUsersFromChatrooms(ctx context.Context, id int32) error 
 }
 
 const getChatroomByUsername = `-- name: getChatroomByUsername :one
-SELECT uc.id, user_id, chatroom_id, uc.created_at, role, u.id, username, nickname, hashed_password, email, u.created_at FROM "users_chatrooms" UC
+SELECT UC.id AS chatroom_user_id, 
+    U.id as user_id,
+    U.username,
+    U.nickname,
+    U.email,
+    U.created_at
+FROM "users_chatrooms" UC
 JOIN users U ON UC.user_id = U.id
 WHERE
     U.username = $1
 `
 
 type getChatroomByUsernameRow struct {
-	ID             int32              `json:"id"`
+	ChatroomUserID int32              `json:"chatroom_user_id"`
 	UserID         int32              `json:"user_id"`
-	ChatroomID     int32              `json:"chatroom_id"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	Role           string             `json:"role"`
-	ID_2           int32              `json:"id_2"`
 	Username       string             `json:"username"`
 	Nickname       string             `json:"nickname"`
-	HashedPassword string             `json:"hashed_password"`
 	Email          string             `json:"email"`
-	CreatedAt_2    pgtype.Timestamptz `json:"created_at_2"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) getChatroomByUsername(ctx context.Context, username string) (getChatroomByUsernameRow, error) {
 	row := q.db.QueryRow(ctx, getChatroomByUsername, username)
 	var i getChatroomByUsernameRow
 	err := row.Scan(
-		&i.ID,
+		&i.ChatroomUserID,
 		&i.UserID,
-		&i.ChatroomID,
-		&i.CreatedAt,
-		&i.Role,
-		&i.ID_2,
 		&i.Username,
 		&i.Nickname,
-		&i.HashedPassword,
 		&i.Email,
-		&i.CreatedAt_2,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByChatroomName = `-- name: getUserByChatroomName :one
-SELECT uc.id, user_id, chatroom_id, uc.created_at, role, c.id, chatroom_name, description, c.created_at FROM "users_chatrooms" UC
-JOIN chatrooms C ON UC.chatroom_id = C.chatroom_id
+SELECT UC.id AS chatroom_user_id,
+    C.id as chatroom_id,
+    C.chatroom_name,
+    C.description,
+    C.created_at
+FROM "users_chatrooms" UC
+JOIN chatrooms C ON UC.chatroom_id = C.id
 WHERE
     C.chatroom_name = $1
 `
 
 type getUserByChatroomNameRow struct {
-	ID           int32              `json:"id"`
-	UserID       int32              `json:"user_id"`
-	ChatroomID   int32              `json:"chatroom_id"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Role         string             `json:"role"`
-	ID_2         int32              `json:"id_2"`
-	ChatroomName string             `json:"chatroom_name"`
-	Description  pgtype.Text        `json:"description"`
-	CreatedAt_2  pgtype.Timestamptz `json:"created_at_2"`
+	ChatroomUserID int32              `json:"chatroom_user_id"`
+	ChatroomID     int32              `json:"chatroom_id"`
+	ChatroomName   string             `json:"chatroom_name"`
+	Description    pgtype.Text        `json:"description"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) getUserByChatroomName(ctx context.Context, chatroomName string) (getUserByChatroomNameRow, error) {
 	row := q.db.QueryRow(ctx, getUserByChatroomName, chatroomName)
 	var i getUserByChatroomNameRow
 	err := row.Scan(
-		&i.ID,
-		&i.UserID,
+		&i.ChatroomUserID,
 		&i.ChatroomID,
-		&i.CreatedAt,
-		&i.Role,
-		&i.ID_2,
 		&i.ChatroomName,
 		&i.Description,
-		&i.CreatedAt_2,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listChatroomsByUsername = `-- name: listChatroomsByUsername :many
-SELECT uc.id, user_id, chatroom_id, uc.created_at, role, u.id, username, nickname, hashed_password, email, u.created_at FROM "users_chatrooms" UC
+SELECT UC.id AS chatroom_user_id,
+    C.id as chatroom_id,
+    C.chatroom_name,
+    C.description,
+    C.created_at
+FROM "users_chatrooms" UC
 JOIN users U ON UC.user_id = U.id
+JOIN chatrooms C ON UC.chatroom_id = C.id 
 WHERE
     U.username = $1
 ORDER BY UC.chatroom_id
@@ -143,17 +140,11 @@ type listChatroomsByUsernameParams struct {
 }
 
 type listChatroomsByUsernameRow struct {
-	ID             int32              `json:"id"`
-	UserID         int32              `json:"user_id"`
+	ChatroomUserID int32              `json:"chatroom_user_id"`
 	ChatroomID     int32              `json:"chatroom_id"`
+	ChatroomName   string             `json:"chatroom_name"`
+	Description    pgtype.Text        `json:"description"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	Role           string             `json:"role"`
-	ID_2           int32              `json:"id_2"`
-	Username       string             `json:"username"`
-	Nickname       string             `json:"nickname"`
-	HashedPassword string             `json:"hashed_password"`
-	Email          string             `json:"email"`
-	CreatedAt_2    pgtype.Timestamptz `json:"created_at_2"`
 }
 
 func (q *Queries) listChatroomsByUsername(ctx context.Context, arg listChatroomsByUsernameParams) ([]listChatroomsByUsernameRow, error) {
@@ -166,17 +157,11 @@ func (q *Queries) listChatroomsByUsername(ctx context.Context, arg listChatrooms
 	for rows.Next() {
 		var i listChatroomsByUsernameRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
+			&i.ChatroomUserID,
 			&i.ChatroomID,
+			&i.ChatroomName,
+			&i.Description,
 			&i.CreatedAt,
-			&i.Role,
-			&i.ID_2,
-			&i.Username,
-			&i.Nickname,
-			&i.HashedPassword,
-			&i.Email,
-			&i.CreatedAt_2,
 		); err != nil {
 			return nil, err
 		}
@@ -189,8 +174,15 @@ func (q *Queries) listChatroomsByUsername(ctx context.Context, arg listChatrooms
 }
 
 const listUsersByChatroomName = `-- name: listUsersByChatroomName :many
-SELECT uc.id, user_id, chatroom_id, uc.created_at, role, c.id, chatroom_name, description, c.created_at FROM "users_chatrooms" UC
-JOIN chatrooms C ON UC.chatroom_id = C.chatroom_id
+SELECT UC.id AS chatroom_user_id, 
+    U.id as user_id,
+    U.username,
+    U.nickname,
+    U.email,
+    U.created_at
+FROM "users_chatrooms" UC
+JOIN chatrooms C ON UC.chatroom_id = C.id
+JOIN users U ON UC.user_id = U.id
 WHERE
     C.chatroom_name = $1
 ORDER BY UC.user_id
@@ -205,15 +197,12 @@ type listUsersByChatroomNameParams struct {
 }
 
 type listUsersByChatroomNameRow struct {
-	ID           int32              `json:"id"`
-	UserID       int32              `json:"user_id"`
-	ChatroomID   int32              `json:"chatroom_id"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Role         string             `json:"role"`
-	ID_2         int32              `json:"id_2"`
-	ChatroomName string             `json:"chatroom_name"`
-	Description  pgtype.Text        `json:"description"`
-	CreatedAt_2  pgtype.Timestamptz `json:"created_at_2"`
+	ChatroomUserID int32              `json:"chatroom_user_id"`
+	UserID         int32              `json:"user_id"`
+	Username       string             `json:"username"`
+	Nickname       string             `json:"nickname"`
+	Email          string             `json:"email"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) listUsersByChatroomName(ctx context.Context, arg listUsersByChatroomNameParams) ([]listUsersByChatroomNameRow, error) {
@@ -226,15 +215,12 @@ func (q *Queries) listUsersByChatroomName(ctx context.Context, arg listUsersByCh
 	for rows.Next() {
 		var i listUsersByChatroomNameRow
 		if err := rows.Scan(
-			&i.ID,
+			&i.ChatroomUserID,
 			&i.UserID,
-			&i.ChatroomID,
+			&i.Username,
+			&i.Nickname,
+			&i.Email,
 			&i.CreatedAt,
-			&i.Role,
-			&i.ID_2,
-			&i.ChatroomName,
-			&i.Description,
-			&i.CreatedAt_2,
 		); err != nil {
 			return nil, err
 		}

@@ -6,19 +6,20 @@ import (
 	"os"
 	"testing"
 
+	"github.com/eraDong/NanaChat/bootstrap"
 	"github.com/jackc/pgx/v5/pgxpool"
-)
-
-const (
-	DBSource = "postgres://root:root@localhost:5432/nanachat?sslmode=disable"
 )
 
 var testStore *store
 
 func TestMain(m *testing.M) {
-	connPool, err := pgxpool.New(context.Background(), DBSource)
+	cfg, err := bootstrap.LoadConfig("../bootstrap/env.yaml")
 	if err != nil {
-		log.Fatal("cannot connect to db:%w", err)
+		log.Fatal("cannot load env, err:", err)
+	}
+	connPool, err := pgxpool.New(context.Background(), cfg.DBSource.DSN())
+	if err != nil {
+		log.Fatal("cannot connect to db:", err)
 	}
 	testStore = NewStore(connPool)
 	os.Exit(m.Run())

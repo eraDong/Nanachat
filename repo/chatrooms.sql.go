@@ -49,11 +49,11 @@ func (q *Queries) deleteChatrooms(ctx context.Context, id int32) error {
 
 const getChatrooms = `-- name: getChatrooms :one
 SELECT id, chatroom_name, description, created_at FROM "chatrooms"
-WHERE chatroom_name=@chatroom_name
+WHERE chatroom_name=$1
 `
 
-func (q *Queries) getChatrooms(ctx context.Context) (Chatrooms, error) {
-	row := q.db.QueryRow(ctx, getChatrooms)
+func (q *Queries) getChatrooms(ctx context.Context, chatroomName string) (Chatrooms, error) {
+	row := q.db.QueryRow(ctx, getChatrooms, chatroomName)
 	var i Chatrooms
 	err := row.Scan(
 		&i.ID,

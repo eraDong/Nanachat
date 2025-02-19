@@ -39,15 +39,15 @@ func (q *Queries) createMessage(ctx context.Context, arg createMessageParams) (M
 
 const deleteMessage = `-- name: deleteMessage :exec
 DELETE FROM "messages"
-WHERE id=@id
+WHERE id=$1
 `
 
-func (q *Queries) deleteMessage(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, deleteMessage)
+func (q *Queries) deleteMessage(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteMessage, id)
 	return err
 }
 
-const listMessages = `-- name: listMessages :many
+const listMessagesByChatroomName = `-- name: listMessagesByChatroomName :many
 SELECT 
     M.id AS message_id,
     M.text,
@@ -58,19 +58,19 @@ FROM "messages" M
 JOIN "users_chatrooms" UC ON M.user_chatroom_id = UC.id
 JOIN "users" U ON UC.user_id = U.id
 JOIN "chatrooms" C ON UC.chatroom_id = C.id
-WHERE C.id = $1
+WHERE C.chatroom_name = $1
 ORDER BY M.created_at DESC
 LIMIT $2
 OFFSET $3
 `
 
-type listMessagesParams struct {
-	ID     int32 `json:"id"`
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+type listMessagesByChatroomNameParams struct {
+	ChatroomName string `json:"chatroom_name"`
+	Limit        int32  `json:"limit"`
+	Offset       int32  `json:"offset"`
 }
 
-type listMessagesRow struct {
+type listMessagesByChatroomNameRow struct {
 	MessageID    int32              `json:"message_id"`
 	Text         string             `json:"text"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
@@ -78,15 +78,72 @@ type listMessagesRow struct {
 	ChatroomName string             `json:"chatroom_name"`
 }
 
-func (q *Queries) listMessages(ctx context.Context, arg listMessagesParams) ([]listMessagesRow, error) {
-	rows, err := q.db.Query(ctx, listMessages, arg.ID, arg.Limit, arg.Offset)
+func (q *Queries) listMessagesByChatroomName(ctx context.Context, arg listMessagesByChatroomNameParams) ([]listMessagesByChatroomNameRow, error) {
+	rows, err := q.db.Query(ctx, listMessagesByChatroomName, arg.ChatroomName, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []listMessagesRow{}
+	items := []listMessagesByChatroomNameRow{}
 	for rows.Next() {
-		var i listMessagesRow
+		var i listMessagesByChatroomNameRow
+		if err := rows.Scan(
+			&i.MessageID,
+			&i.Text,
+			&i.CreatedAt,
+			&i.SenderName,
+			&i.ChatroomName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMessagesByUsername = `-- name: listMessagesByUsername :many
+SELECT 
+    M.id AS message_id,
+    M.text,
+    M.created_at,
+    U.username AS sender_name,
+    C.chatroom_name
+FROM "messages" M
+JOIN "users_chatrooms" UC ON M.user_chatroom_id = UC.id
+JOIN "users" U ON UC.user_id = U.id
+JOIN "chatrooms" C ON UC.chatroom_id = C.id
+WHERE U.username = $1
+ORDER BY M.created_at DESC
+LIMIT $2
+OFFSET $3
+`
+
+type listMessagesByUsernameParams struct {
+	Username string `json:"username"`
+	Limit    int32  `json:"limit"`
+	Offset   int32  `json:"offset"`
+}
+
+type listMessagesByUsernameRow struct {
+	MessageID    int32              `json:"message_id"`
+	Text         string             `json:"text"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	SenderName   string             `json:"sender_name"`
+	ChatroomName string             `json:"chatroom_name"`
+}
+
+func (q *Queries) listMessagesByUsername(ctx context.Context, arg listMessagesByUsernameParams) ([]listMessagesByUsernameRow, error) {
+	rows, err := q.db.Query(ctx, listMessagesByUsername, arg.Username, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []listMessagesByUsernameRow{}
+	for rows.Next() {
+		var i listMessagesByUsernameRow
 		if err := rows.Scan(
 			&i.MessageID,
 			&i.Text,
