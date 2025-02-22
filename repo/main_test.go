@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var testStore *store
+var testStore *Store
 
 func TestMain(m *testing.M) {
 	cfg, err := bootstrap.LoadConfig("../bootstrap/env.yaml")
