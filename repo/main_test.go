@@ -22,5 +22,7 @@ func TestMain(m *testing.M) {
 		log.Fatal("cannot connect to db:", err)
 	}
 	testStore = NewStore(connPool)
-	os.Exit(m.Run())
+	code := m.Run()
+	connPool.Close()
+	os.Exit(code)
 }
