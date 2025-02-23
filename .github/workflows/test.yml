@@ -45,7 +45,7 @@ jobs:
             which migrate
         
         - name: Run migrations
-          run: make migrateup
+          run: migrate -database postgres://root:root@postgres:5432/nanachat?sslmode=disable -path db/migration up
 
         - name: Test
           run: make test
