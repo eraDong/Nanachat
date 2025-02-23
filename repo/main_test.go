@@ -13,12 +13,12 @@ import (
 var testStore *Store
 
 func TestMain(m *testing.M) {
-	cfg, err := bootstrap.LoadConfig("../bootstrap/env.yaml")
+	cfg, err := bootstrap.LoadConfig("../bootstrap/")
 	if err != nil {
 		log.Fatal("cannot load env, err:", err)
 	}
 
-	connPool, err := pgxpool.New(context.Background(), cfg.DBSource.DSN())
+	connPool, err := pgxpool.New(context.Background(), cfg.DBSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}

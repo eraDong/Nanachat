@@ -13,7 +13,7 @@ jobs:
 
         services:
             postgres:
-              image: postgres
+              image: postgres:17.3-alpine
               env:
                 POSTGRES_USER: root
                 POSTGRES_PASSWORD: root
@@ -45,9 +45,7 @@ jobs:
             which migrate
         
         - name: Run migrations
-          run: migrate -database postgres://root:root@postgres:5432/nanachat?sslmode=disable -path db/migration up
+          run: make migrateup
 
         - name: Test
           run: make test
-          env:
-            NANA_CHAT_DATABASE_HOST: postgres
