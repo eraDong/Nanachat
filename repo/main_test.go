@@ -17,12 +17,12 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal("cannot load env, err:", err)
 	}
+
 	connPool, err := pgxpool.New(context.Background(), cfg.DBSource.DSN())
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
+
 	testStore = NewStore(connPool)
-	code := m.Run()
-	connPool.Close()
-	os.Exit(code)
+	os.Exit(m.Run())
 }
