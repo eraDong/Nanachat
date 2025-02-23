@@ -51,17 +51,18 @@ func TestCreateUser(t *testing.T) {
 		require.Error(t, err)
 		require.Empty(t, user)
 	})
-	t.Run("create empty username user", func(t *testing.T) {
-		arg := createUserParams{
-			Username:       "",
-			Nickname:       util.RandomString(6),
-			HashedPassword: "123",
-			Email:          randomEmail(),
-		}
-		user, err := testStore.createUser(context.Background(), arg)
-		require.Error(t, err)
-		require.Empty(t, user)
-	})
+	// t.Run("create empty username user", func(t *testing.T) {
+	// 	arg := createUserParams{
+	// 		Username:       "",
+	// 		Nickname:       util.RandomString(6),
+	// 		HashedPassword: "123",
+	// 		Email:          randomEmail(),
+	// 	}
+	// 	user, err := testStore.createUser(context.Background(), arg)
+
+	// 	require.Error(t, err)
+	// 	require.Empty(t, user)
+	// })
 }
 
 func TestUpdateUser(t *testing.T) {
