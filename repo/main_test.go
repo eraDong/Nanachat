@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -20,7 +19,7 @@ func TestMain(m *testing.M) {
 	}
 
 	connPool, err := pgxpool.New(context.Background(), cfg.DBSource.DSN())
-	fmt.Printf("pool: %v\n", connPool)
+
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
