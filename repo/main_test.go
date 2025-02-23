@@ -14,13 +14,21 @@ import (
 var testStore *Store
 
 func TestMain(m *testing.M) {
+<<<<<<< HEAD
 	cfg, err := bootstrap.LoadConfig("../bootstrap")
+=======
+	cfg, err := bootstrap.LoadConfig("../bootstrap/")
+>>>>>>> 909841ba889776a9b31cf36d3ca72ee99920909b
 	if err != nil {
 		log.Fatal("cannot load env, err:", err)
 	}
 
+<<<<<<< HEAD
 	connPool, err := pgxpool.New(context.Background(), cfg.DBSource.DSN())
 	fmt.Printf("pool: %v\n", connPool)
+=======
+	connPool, err := pgxpool.New(context.Background(), cfg.DBSource)
+>>>>>>> 909841ba889776a9b31cf36d3ca72ee99920909b
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
