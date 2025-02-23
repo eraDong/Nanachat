@@ -2,7 +2,6 @@ package bootstrap
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -29,9 +28,9 @@ func (d DatabaseConfig) DSN() string {
 }
 
 func LoadConfig(filePath string) (*Config, error) {
-	viper.SetConfigFile(filePath)
-	viper.SetEnvPrefix("NANA_CHAT")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AddConfigPath(filePath)
+	viper.SetConfigName("env")
+	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
