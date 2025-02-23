@@ -29,8 +29,10 @@ func (d DatabaseConfig) DSN() string {
 }
 
 func LoadConfig(filePath string) (*Config, error) {
-	viper.SetConfigFile(filePath)
+	viper.AddConfigPath(filePath)
 	viper.SetEnvPrefix("NANA_CHAT")
+	viper.SetConfigName("env")
+	viper.SetConfigType("yaml")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {

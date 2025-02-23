@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -13,12 +14,13 @@ import (
 var testStore *Store
 
 func TestMain(m *testing.M) {
-	cfg, err := bootstrap.LoadConfig("../bootstrap/env.yaml")
+	cfg, err := bootstrap.LoadConfig("../bootstrap")
 	if err != nil {
 		log.Fatal("cannot load env, err:", err)
 	}
 
 	connPool, err := pgxpool.New(context.Background(), cfg.DBSource.DSN())
+	fmt.Printf("pool: %v\n", connPool)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
